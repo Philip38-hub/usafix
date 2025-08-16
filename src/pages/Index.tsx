@@ -30,7 +30,7 @@ interface ServiceProvider {
 }
 
 const Index = () => {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, isProvider, civicUser, authMethod } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
@@ -160,15 +160,32 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {user ? (
+              {user || civicUser ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">
-                    Welcome, {profile?.full_name || 'User'}
+                    Welcome, {profile?.full_name || civicUser?.name || 'User'}
                   </span>
-                  {profile?.user_type === 'provider' && (
-                    <Badge variant="outline" className="text-xs">
-                      Provider
-                    </Badge>
+                  <div className="flex items-center gap-1">
+                    {authMethod === 'civic' && (
+                      <Badge variant="outline" className="text-xs">
+                        Civic
+                      </Badge>
+                    )}
+                    {isProvider && (
+                      <Badge variant="secondary" className="text-xs">
+                        Provider
+                      </Badge>
+                    )}
+                  </div>
+                  {isProvider && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/provider/dashboard')}
+                      className="text-xs"
+                    >
+                      Dashboard
+                    </Button>
                   )}
                   <Button
                     variant="ghost"
@@ -321,13 +338,13 @@ const Index = () => {
       </section>
 
       {/* Database Status Section - Development Only */}
-      <section className="py-8 bg-muted/30">
+      {/* <section className="py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex justify-center">
             <DatabaseStatus />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="bg-card border-t border-border py-8 mt-12">

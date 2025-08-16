@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => {
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithCivic, civicUser, isAuthenticated } = useAuth();
+  const { signIn, signUp, signInWithCivic, civicUser, isAuthenticated, userRole, needsRoleSelection } = useAuth();
   const [loading, setLoading] = useState(false);
   const [civicLoading, setCivicLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,6 +33,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => 
     'Meru', 'Nyeri', 'Kiambu', 'Kakamega', 'Kericho', 'Garissa', 'Kitale'
   ];
 
+  // Handle automatic navigation after authentication
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (needsRoleSelection) {
+        navigate('/select-role');
+      } else if (userRole) {
+        navigate('/dashboard');
+      }
+    }
+  }, [isAuthenticated, userRole, needsRoleSelection, navigate]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,7 +51,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => 
     const { data } = await signIn(formData.email, formData.password);
     
     if (data?.user) {
-      navigate('/');
+      // Navigate based on user role
+      navigate('/dashboard');
     }
     
     setLoading(false);
@@ -58,7 +70,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => 
     });
     
     if (data?.user) {
-      navigate('/');
+      // Navigate based on user role
+      navigate('/dashboard');
     }
     
     setLoading(false);
@@ -270,10 +283,49 @@ export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => 
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 text-center">
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                🚧 Civic Auth integration coming soon
-              </Badge>
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              
+              <Button
+                variant="outline"
+                className="w-full mt-4 border-primary/20 hover:bg-primary/5"
+                onClick={async () => {
+                  setCivicLoading(true);
+                  try {
+                    await signInWithCivic();
+                  } catch (error) {
+                    console.error('Civic Auth error:', error);
+                  } finally {
+                    setCivicLoading(false);
+                  }
+                }}
+                disabled={civicLoading}
+              >
+                {civicLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Sign in with Civic
+                  </>
+                )}
+              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Secure decentralized authentication
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -14,7 +14,7 @@
   - Add error handling for Civic Auth authentication failures
   - _Requirements: 2.1, 2.2, 2.7_
 
-- [-] 3. Enhance authentication system with Civic Auth and role detection
+- [ ] 3. Enhance authentication system with Civic Auth and role detection
   - Modify existing AuthPage component to include Civic Auth sign-in button
   - Implement Civic Auth sign-in flow with iframe/redirect display modes
   - Create user role detection logic from Civic Auth user data
