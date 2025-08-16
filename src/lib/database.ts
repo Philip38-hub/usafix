@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 
 // Database connection singleton
-let db: Database.Database | null = null;
+let db: Database.Database | null = null;e | null = null;
 
 export function getDatabase(): Database.Database {
   if (!db) {

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Building, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building, User, Loader2, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthPageProps {
@@ -16,8 +16,9 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithCivic, civicUser, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [civicLoading, setCivicLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
