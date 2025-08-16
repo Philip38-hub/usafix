@@ -8,35 +8,56 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* African-inspired color palette */
+    --background: 30 15% 98%;
+    --foreground: 20 14% 8%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 30 15% 99%;
+    --card-foreground: 20 14% 8%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 30 15% 99%;
+    --popover-foreground: 20 14% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Kenyan flag inspired colors - deep red/black */
+    --primary: 0 72% 51%; /* Kenyan red */
+    --primary-foreground: 30 15% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Warm earth tones */
+    --secondary: 25 35% 85%;
+    --secondary-foreground: 20 14% 8%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 30 15% 94%;
+    --muted-foreground: 25 8% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* African sunset orange */
+    --accent: 25 85% 65%;
+    --accent-foreground: 30 15% 98%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 30 15% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 25 20% 88%;
+    --input: 25 20% 88%;
+    --ring: 0 72% 51%;
 
-    --radius: 0.5rem;
+    /* Kenya green for success states */
+    --success: 140 60% 45%;
+    --success-foreground: 30 15% 98%;
+
+    /* M-Pesa green */
+    --mpesa: 140 85% 35%;
+    --mpesa-foreground: 30 15% 98%;
+
+    /* African warm gradients */
+    --gradient-sunset: linear-gradient(135deg, hsl(25 85% 65%), hsl(15 80% 60%));
+    --gradient-earth: linear-gradient(180deg, hsl(30 25% 90%), hsl(25 20% 85%));
+    --gradient-primary: linear-gradient(135deg, hsl(0 72% 51%), hsl(10 65% 45%));
+
+    /* Shadows with warm tones */
+    --shadow-warm: 0 4px 12px hsl(25 25% 75% / 0.15);
+    --shadow-primary: 0 8px 25px hsl(0 72% 51% / 0.25);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +77,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark theme with warm African night colors */
+    --background: 20 25% 6%;
+    --foreground: 30 15% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 20% 8%;
+    --card-foreground: 30 15% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 20% 8%;
+    --popover-foreground: 30 15% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 72% 55%;
+    --primary-foreground: 30 15% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 20 15% 15%;
+    --secondary-foreground: 30 15% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 20 15% 12%;
+    --muted-foreground: 25 8% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 25 75% 55%;
+    --accent-foreground: 20 25% 6%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 30 15% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 20 15% 15%;
+    --input: 20 15% 15%;
+    --ring: 0 72% 55%;
+
+    --success: 140 60% 50%;
+    --success-foreground: 30 15% 98%;
+
+    --mpesa: 140 70% 40%;
+    --mpesa-foreground: 30 15% 98%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
