@@ -14,7 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_status: string | null
+          client_id: string
+          client_phone: string | null
+          created_at: string
+          description: string
+          estimated_price: number | null
+          final_price: number | null
+          id: string
+          location: string
+          mpesa_transaction_id: string | null
+          payment_method: string | null
+          payment_status: string | null
+          preferred_date: string | null
+          provider_id: string
+          provider_phone: string | null
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          booking_status?: string | null
+          client_id: string
+          client_phone?: string | null
+          created_at?: string
+          description: string
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          location: string
+          mpesa_transaction_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          preferred_date?: string | null
+          provider_id: string
+          provider_phone?: string | null
+          service_type: string
+          updated_at?: string
+        }
+        Update: {
+          booking_status?: string | null
+          client_id?: string
+          client_phone?: string | null
+          created_at?: string
+          description?: string
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          location?: string
+          mpesa_transaction_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          preferred_date?: string | null
+          provider_id?: string
+          provider_phone?: string | null
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          location: string | null
+          phone_number: string | null
+          updated_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id: string
+          user_type?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          booking_id: string
+          client_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          provider_id: string
+          rating: number
+        }
+        Insert: {
+          booking_id: string
+          client_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          provider_id: string
+          rating: number
+        }
+        Update: {
+          booking_id?: string
+          client_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          provider_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_providers: {
+        Row: {
+          availability_hours: Json | null
+          business_name: string
+          county: string
+          created_at: string
+          description: string | null
+          gallery_images: string[] | null
+          id: string
+          is_verified: boolean | null
+          location: string
+          phone_number: string
+          price_range: string | null
+          profile_image_url: string | null
+          rating: number | null
+          services: string[]
+          total_jobs: number | null
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          availability_hours?: Json | null
+          business_name: string
+          county: string
+          created_at?: string
+          description?: string | null
+          gallery_images?: string[] | null
+          id?: string
+          is_verified?: boolean | null
+          location: string
+          phone_number: string
+          price_range?: string | null
+          profile_image_url?: string | null
+          rating?: number | null
+          services: string[]
+          total_jobs?: number | null
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          availability_hours?: Json | null
+          business_name?: string
+          county?: string
+          created_at?: string
+          description?: string | null
+          gallery_images?: string[] | null
+          id?: string
+          is_verified?: boolean | null
+          location?: string
+          phone_number?: string
+          price_range?: string | null
+          profile_image_url?: string | null
+          rating?: number | null
+          services?: string[]
+          total_jobs?: number | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
