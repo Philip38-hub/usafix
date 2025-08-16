@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Check Existing Code",
+  "description": "Automatically checks the codebase for existing implementations and logic when new code files are created or modified to prevent duplication",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.js",
+      "src/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new file has been created or modified in the codebase. Before implementing any new functionality, please analyze the existing codebase to identify any similar implementations, patterns, or logic that already exist. Check for:\n\n1. Similar components, hooks, or utilities that might already exist\n2. Existing patterns and conventions used in the codebase\n3. Duplicate functionality that could be refactored or reused\n4. Opportunities to extend existing code rather than creating new implementations\n\nProvide recommendations on how to leverage existing code and avoid duplication. If similar functionality exists, suggest how to reuse or extend it. If the implementation is truly unique, confirm that it doesn't conflict with existing patterns."
+  }
+}

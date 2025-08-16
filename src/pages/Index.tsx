@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ServiceProviderCard } from '@/components/ServiceProviderCard';
-import { AuthPage } from '@/components/AuthPage'; 
+import { AuthPage } from '@/components/AuthPage';
+import { DatabaseStatus } from '@/components/DatabaseStatus'; 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Filter, MapPin, Grid, List, Menu, User, LogOut } from 'lucide-react';
@@ -316,6 +317,15 @@ const Index = () => {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Database Status Section - Development Only */}
+      <section className="py-8 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center">
+            <DatabaseStatus />
+          </div>
         </div>
       </section>
 
