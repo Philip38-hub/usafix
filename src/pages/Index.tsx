@@ -7,7 +7,8 @@ import { ServiceProviderCard } from '@/components/ServiceProviderCard';
 import { AuthPage } from '@/components/AuthPage';
 import { DatabaseStatus } from '@/components/DatabaseStatus'; 
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { getServiceProviders } from '@/services/dbService';
+import db from '@/lib/db';
 import { Search, Filter, MapPin, Grid, List, Menu, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -51,7 +52,23 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    fetchProviders();
+    const init = async () => {
+      try {
+        // Initialize the database and seed data if needed
+        await db.seedInitialData();
+        // Fetch the providers
+        await fetchProviders();
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        toast({
+          title: "Error initializing application",
+          description: "Please refresh the page to try again",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    init();
   }, []);
 
   useEffect(() => {
@@ -60,12 +77,7 @@ const Index = () => {
 
   const fetchProviders = async () => {
     try {
-      const { data, error } = await supabase
-        .from('service_providers')
-        .select('*')
-        .order('rating', { ascending: false });
-
-      if (error) throw error;
+      const data = await getServiceProviders();
       setProviders(data || []);
     } catch (error) {
       console.error('Error fetching providers:', error);
