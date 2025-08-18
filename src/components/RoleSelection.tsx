@@ -7,7 +7,7 @@ import { Building, User, Loader2, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const RoleSelection: React.FC = () => {
-  const { updateUserRole, civicUser, isAuthenticated, loading: authLoading } = useAuth();
+  const { updateUserRole, civicUser, isAuthenticated, loading: authLoading, userRole, needsRoleSelection } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'client' | 'provider' | null>(null);
   const navigate = useNavigate();
@@ -20,13 +20,37 @@ export const RoleSelection: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // Auto-redirect when role is successfully set
+  React.useEffect(() => {
+    console.log('RoleSelection useEffect - checking redirect conditions:', {
+      isAuthenticated,
+      userRole,
+      needsRoleSelection,
+      loading: authLoading
+    });
+
+    if (isAuthenticated && userRole && !needsRoleSelection && !authLoading) {
+      console.log('Role successfully set, redirecting...', { userRole });
+
+      // Navigate based on the user's role
+      if (userRole === 'provider') {
+        navigate('/provider/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isAuthenticated, userRole, needsRoleSelection, navigate, authLoading]);
+
   const handleRoleSelection = async (role: 'client' | 'provider') => {
     setLoading(true);
 
     try {
       // If user is authenticated, try to update role normally
       if (isAuthenticated && civicUser) {
+        console.log('Updating user role to:', role);
         await updateUserRole(role);
+        // Navigation will be handled automatically by the useEffect above
+        console.log('Role update completed, waiting for automatic navigation...');
       } else {
         // If user is not authenticated but we're on role selection page,
         // it means they were authenticated recently but lost session
@@ -37,13 +61,6 @@ export const RoleSelection: React.FC = () => {
         // Redirect to auth page
         navigate('/auth');
         return;
-      }
-
-      // Navigate based on selected role
-      if (role === 'provider') {
-        navigate('/provider/dashboard');
-      } else {
-        navigate('/');
       }
     } catch (error) {
       console.error('Error updating role:', error);

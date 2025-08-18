@@ -141,23 +141,24 @@ const CivicAuthProviderInner: React.FC<{
 
   const getUserRole = (): 'client' | 'provider' | null => {
     if (!civicUser) return null;
-    
+
     // Check metadata first
     if (civicUser.metadata?.userType) {
       return civicUser.metadata.userType === 'provider' ? 'provider' : 'client';
     }
-    
+
     if (civicUser.metadata?.role) {
       return civicUser.metadata.role === 'provider' ? 'provider' : 'client';
     }
-    
-    // Check localStorage
+
+    // Check localStorage as fallback
     const storedRole = localStorage.getItem(`civic_user_role_${civicUser.id}`);
     if (storedRole === 'provider' || storedRole === 'client') {
       return storedRole;
     }
-    
+
     // Return null to indicate role selection is needed
+    // Note: The actual role will be determined from the database in useAuth hook
     return null;
   };
 

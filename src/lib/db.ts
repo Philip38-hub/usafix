@@ -218,13 +218,37 @@ export const createServiceProvider = async (data: any) => {
 export const getUserByCivicId = async (civicId: string) => {
   const db = await getDB();
   const user = await db.getFromIndex('users', 'by-civic-id', civicId);
-  return user ? toCamelCase(user) : null;
+
+  if (user) {
+    return toCamelCase(user);
+  }
+
+  // Fallback: check enhanced localStorage for user data
+  const { retrieveUserData } = await import('./userStorage');
+  const storedUserData = retrieveUserData(civicId);
+  if (storedUserData) {
+    // Create a minimal user object from stored data
+    return {
+      id: civicId,
+      civicAuthId: civicId,
+      fullName: storedUserData.fullName,
+      userType: storedUserData.userType,
+      phoneNumber: null,
+      location: 'Nairobi',
+      avatarUrl: null,
+      email: storedUserData.email || null,
+      createdAt: storedUserData.updatedAt,
+      updatedAt: storedUserData.updatedAt,
+    };
+  }
+
+  return null;
 };
 
 export const createUser = async (data: any) => {
   const db = await getDB();
   const now = new Date().toISOString();
-  
+
   const user = {
     id: data.id || `user_${Date.now()}`,
     civic_auth_id: data.civicAuthId || null,
@@ -237,9 +261,52 @@ export const createUser = async (data: any) => {
     created_at: data.createdAt || now,
     updated_at: now,
   };
-  
+
   await db.put('users', user);
+
+  // Store in enhanced localStorage for cross-browser scenarios
+  if (user.civic_auth_id) {
+    const { storeUserData } = await import('./userStorage');
+    storeUserData(user.civic_auth_id, {
+      userType: user.user_type as 'client' | 'provider',
+      fullName: user.full_name,
+      email: user.email || undefined,
+      updatedAt: user.updated_at
+    });
+  }
+
   return toCamelCase(user);
+};
+
+export const updateUser = async (civicAuthId: string, updates: any) => {
+  const db = await getDB();
+
+  // Get existing user
+  const existingUser = await db.getFromIndex('users', 'by-civic-id', civicAuthId);
+  if (!existingUser) {
+    throw new Error('User not found');
+  }
+
+  // Update user data
+  const updatedUser = {
+    ...existingUser,
+    ...updates,
+    user_type: updates.userType || existingUser.user_type,
+    updated_at: new Date().toISOString(),
+  };
+
+  await db.put('users', updatedUser);
+
+  // Store in enhanced localStorage for cross-browser scenarios
+  const { storeUserData } = await import('./userStorage');
+  storeUserData(civicAuthId, {
+    userType: updatedUser.user_type as 'client' | 'provider',
+    fullName: updatedUser.full_name,
+    email: updatedUser.email || undefined,
+    updatedAt: updatedUser.updated_at
+  });
+
+  return toCamelCase(updatedUser);
 };
 
 export const seedInitialData = async () => {
