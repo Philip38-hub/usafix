@@ -208,6 +208,8 @@ export const CivicAuthProvider: React.FC<CivicAuthProviderProps> = ({
       onSignIn={(error?: Error) => {
         if (error) {
           console.error('Civic Auth sign in error:', error);
+        } else {
+          console.log('Civic Auth sign in successful');
         }
       }}
       onSignOut={() => {
