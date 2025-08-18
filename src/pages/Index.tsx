@@ -32,7 +32,7 @@ interface ServiceProvider {
 }
 
 const Index = () => {
-  const { profile, loading, signOut, isProvider, civicUser, authMethod, isAuthenticated } = useAuth();
+  const { profile, loading, signOut, isProvider, civicUser, authMethod, isAuthenticated, needsRoleSelection } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
@@ -51,6 +51,14 @@ const Index = () => {
     'All Services', 'House Cleaning', 'Plumbing', 'Electrical', 'Painting', 'Carpentry'
   ];
 
+  // Redirect to role selection if user is authenticated but hasn't selected a role
+  useEffect(() => {
+    if (isAuthenticated && needsRoleSelection) {
+      navigate('/select-role');
+      return;
+    }
+  }, [isAuthenticated, needsRoleSelection, navigate]);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -67,7 +75,7 @@ const Index = () => {
         });
       }
     };
-    
+
     init();
   }, []);
 
@@ -120,16 +128,17 @@ const Index = () => {
   };
 
   const handleBook = (providerId: string) => {
-    if (!user) {
-      setShowAuth(true);
+    if (!isAuthenticated) {
+      navigate('/auth');
       return;
     }
-    
+
     toast({
       title: "Booking initiated",
       description: "Redirecting to booking page...",
     });
     // Navigate to booking page (to be implemented)
+    console.log('Booking provider:', providerId);
   };
 
   const handleCall = (phoneNumber: string) => {

@@ -7,15 +7,38 @@ import { Building, User, Loader2, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const RoleSelection: React.FC = () => {
-  const { updateUserRole, civicUser } = useAuth();
+  const { updateUserRole, civicUser, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'client' | 'provider' | null>(null);
   const navigate = useNavigate();
 
+  // Check if user is still authenticated, redirect to auth if not
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to auth page');
+      navigate('/auth');
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleRoleSelection = async (role: 'client' | 'provider') => {
     setLoading(true);
+
     try {
-      await updateUserRole(role);
+      // If user is authenticated, try to update role normally
+      if (isAuthenticated && civicUser) {
+        await updateUserRole(role);
+      } else {
+        // If user is not authenticated but we're on role selection page,
+        // it means they were authenticated recently but lost session
+        // Store the role selection for when they re-authenticate
+        console.log('User not authenticated, storing role selection for later');
+        localStorage.setItem('pending_role_selection', role);
+
+        // Redirect to auth page
+        navigate('/auth');
+        return;
+      }
+
       // Navigate based on selected role
       if (role === 'provider') {
         navigate('/provider/dashboard');
@@ -24,10 +47,28 @@ export const RoleSelection: React.FC = () => {
       }
     } catch (error) {
       console.error('Error updating role:', error);
+
+      // Store role selection as fallback
+      localStorage.setItem('pending_role_selection', role);
+
+      // Redirect to auth page to re-authenticate
+      navigate('/auth');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading state while authentication is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 flex items-center justify-center p-4">

@@ -84,9 +84,12 @@ const CivicAuthProviderInner: React.FC<{
         description: `Successfully signed in with Civic Auth`,
       });
     } else {
-      setCivicUser(null);
+      // Only clear user if we're not in a loading state
+      if (!isLoading) {
+        setCivicUser(null);
+      }
     }
-  }, [civicSDKUser, onSignIn, toast]);
+  }, [civicSDKUser, onSignIn, toast, isLoading]);
 
   const signInWithCivic = async (): Promise<void> => {
     try {

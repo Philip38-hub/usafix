@@ -53,6 +53,9 @@ export const useAuth = () => {
     try {
       setLoading(true);
 
+      // Check for pending role selection
+      const pendingRole = localStorage.getItem('pending_role_selection') as 'client' | 'provider' | null;
+
       // Create a local profile for Civic Auth user
       // Since we're using Civic Auth only and local database, we'll create a local profile
       const localProfile: Profile = {
@@ -62,7 +65,7 @@ export const useAuth = () => {
         full_name: civicUser.name || 'Civic User',
         phone_number: null,
         location: null,
-        user_type: 'client', // Default, will be updated during role selection
+        user_type: pendingRole || 'client', // Use pending role if available
         avatar_url: civicUser.metadata?.picture || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -109,6 +112,21 @@ export const useAuth = () => {
         // Using local database only
         setProfile(localProfile);
       }
+
+      // If there was a pending role selection, apply it and clean up
+      if (pendingRole) {
+        try {
+          await updateCivicUserRole(pendingRole);
+          localStorage.removeItem('pending_role_selection');
+
+          toast({
+            title: "Role Applied",
+            description: `Your role has been set to ${pendingRole}`,
+          });
+        } catch (error) {
+          console.error('Error applying pending role:', error);
+        }
+      }
     } catch (error) {
       console.error('Error handling Civic Auth user:', error);
     } finally {
@@ -120,7 +138,7 @@ export const useAuth = () => {
 
   // Update user role after Civic Auth
   const updateUserRole = async (role: 'client' | 'provider') => {
-    if (!civicUser || !profile) {
+    if (!civicUser) {
       throw new Error('No authenticated user found');
     }
 
@@ -192,7 +210,11 @@ export const useAuth = () => {
 
   // Check if user needs role selection
   const needsRoleSelection = (): boolean => {
-    return !!civicUser && !getUserRole();
+    const hasUser = !!civicUser;
+    const hasRole = !!getUserRole();
+    const needsRole = hasUser && !hasRole;
+
+    return needsRole;
   };
 
   const currentRole = getUserRole();
