@@ -1,9 +1,10 @@
 import React from 'react';
+import { UserButton } from '@civic/auth/react';
 import { useCivicAuth } from '@/contexts/CivicAuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Shield } from 'lucide-react';
 
 export const CivicAuthTest: React.FC = () => {
   const { 
@@ -31,15 +32,26 @@ export const CivicAuthTest: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Civic Auth UserButton */}
+        <div className="flex justify-center p-4 border rounded-lg bg-muted/50">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-muted-foreground">Civic Auth UserButton:</p>
+            <UserButton
+              className="mx-auto"
+              style={{ minWidth: "200px" }}
+            />
+          </div>
+        </div>
+
         {error && (
           <Alert variant="destructive">
             <XCircle className="h-4 w-4" />
             <AlertDescription>
               {error.message}
               {error.retryable && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="ml-2"
                   onClick={clearError}
                 >

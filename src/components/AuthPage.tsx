@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Building, User, Loader2, Shield } from 'lucide-react';
+import { Building, User, Loader2, Shield, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCivicAuth } from '@/contexts/CivicAuthContext';
 
 interface AuthPageProps {
   defaultTab?: 'signin' | 'signup';
@@ -16,319 +14,238 @@ interface AuthPageProps {
 
 export const AuthPage: React.FC<AuthPageProps> = ({ defaultTab = 'signin' }) => {
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithCivic, civicUser, isAuthenticated, userRole, needsRoleSelection } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [civicLoading, setCivicLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    phone_number: '',
-    location: '',
-    user_type: 'client' as 'client' | 'provider'
-  });
-
-  const kenyanCounties = [
-    'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Machakos',
-    'Meru', 'Nyeri', 'Kiambu', 'Kakamega', 'Kericho', 'Garissa', 'Kitale'
-  ];
+  const { isAuthenticated, userRole, needsRoleSelection, updateUserRole } = useAuth();
+  const { signInWithCivic, civicUser, isLoading, error } = useCivicAuth();
+  const [selectedRole, setSelectedRole] = useState<'client' | 'provider' | null>(null);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
 
   // Handle automatic navigation after authentication
   useEffect(() => {
     if (isAuthenticated) {
       if (needsRoleSelection) {
-        navigate('/select-role');
+        setShowRoleSelection(true);
       } else if (userRole) {
         navigate('/dashboard');
       }
     }
   }, [isAuthenticated, userRole, needsRoleSelection, navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const { data } = await signIn(formData.email, formData.password);
-    
-    if (data?.user) {
-      // Navigate based on user role
-      navigate('/dashboard');
+  // Handle role selection after Civic Auth
+  const handleRoleSelection = async (role: 'client' | 'provider') => {
+    try {
+      await updateUserRole(role);
+      // Navigate based on selected role
+      if (role === 'provider') {
+        navigate('/provider/dashboard');
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
     }
-    
-    setLoading(false);
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const { data } = await signUp(formData.email, formData.password, {
-      full_name: formData.full_name,
-      phone_number: formData.phone_number,
-      location: formData.location,
-      user_type: formData.user_type
-    });
-    
-    if (data?.user) {
-      // Navigate based on user role
-      navigate('/dashboard');
-    }
-    
-    setLoading(false);
-  };
+  // Show role selection if user is authenticated but needs role
+  if (showRoleSelection && civicUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <Shield className="w-12 h-12 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+              Welcome to Konnect!
+            </h1>
+            <p className="text-muted-foreground">
+              Hi {civicUser.name}! Please select your role to continue.
+            </p>
+            <Badge variant="outline" className="mt-2">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Verified with Civic
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Client Role */}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                selectedRole === 'client'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+              onClick={() => setSelectedRole('client')}
+            >
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <User className="w-12 h-12 text-primary" />
+                </div>
+                <CardTitle>I'm a Client</CardTitle>
+                <CardDescription>
+                  Looking for trusted service providers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Browse service providers</li>
+                  <li>• Book appointments</li>
+                  <li>• Rate and review services</li>
+                  <li>• Secure payments</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Provider Role */}
+            <Card
+              className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                selectedRole === 'provider'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+              onClick={() => setSelectedRole('provider')}
+            >
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <Building className="w-12 h-12 text-primary" />
+                </div>
+                <CardTitle>I'm a Service Provider</CardTitle>
+                <CardDescription>
+                  Offering repair and cleaning services
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Manage your business profile</li>
+                  <li>• Accept bookings</li>
+                  <li>• Track earnings</li>
+                  <li>• Build your reputation</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-8 text-center">
+            <Button
+              onClick={() => selectedRole && handleRoleSelection(selectedRole)}
+              disabled={!selectedRole || isLoading}
+              className="px-8 py-3 text-lg"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Setting up your account...
+                </>
+              ) : (
+                `Continue as ${selectedRole === 'client' ? 'Client' : selectedRole === 'provider' ? 'Provider' : '...'}`
+              )}
+            </Button>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              You can change your role later in your profile settings
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-accent/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="mb-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
-          
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Konnect
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Connect with trusted service providers across Kenya
-            </p>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Shield className="w-12 h-12 text-primary" />
           </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+            Welcome to Konnect
+          </h1>
+          <p className="text-muted-foreground">
+            Connect with trusted service providers across Kenya
+          </p>
+          <Badge variant="outline" className="mt-2">
+            Powered by Civic Auth
+          </Badge>
         </div>
 
         <Card className="shadow-lg border-border">
           <CardHeader className="text-center">
-            <CardTitle>Welcome</CardTitle>
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Shield className="w-5 h-5" />
+              Secure Authentication
+            </CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one
+              Sign in or create your account with Civic Auth - the most secure way to authenticate
             </CardDescription>
           </CardHeader>
-          
-          <CardContent>
-            <Tabs defaultValue={defaultTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Sign Up
-                </TabsTrigger>
-              </TabsList>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {error.message || 'Authentication failed. Please try again.'}
+                </AlertDescription>
+              </Alert>
+            )}
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Signing In...
-                      </>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="user-type">I am a</Label>
-                    <Select 
-                      value={formData.user_type} 
-                      onValueChange={(value: 'client' | 'provider') => 
-                        setFormData(prev => ({ ...prev, user_type: value }))
-                      }
-                    >
-                      <SelectTrigger className="border-border">
-                        <SelectValue placeholder="Select user type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            Client (Looking for services)
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="provider">
-                          <div className="flex items-center gap-2">
-                            <Building className="w-4 h-4" />
-                            Service Provider
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="full-name">Full Name</Label>
-                    <Input
-                      id="full-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={formData.full_name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+254 7XX XXX XXX"
-                      value={formData.phone_number}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Select 
-                      value={formData.location} 
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
-                    >
-                      <SelectTrigger className="border-border">
-                        <SelectValue placeholder="Select your county" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kenyanCounties.map((county) => (
-                          <SelectItem key={county} value={county}>
-                            {county}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Create a password"
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                      className="border-border focus:ring-primary"
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-              
+            <div className="text-center">
               <Button
-                variant="outline"
-                className="w-full mt-4 border-primary/20 hover:bg-primary/5"
-                onClick={async () => {
-                  setCivicLoading(true);
-                  try {
-                    await signInWithCivic();
-                  } catch (error) {
-                    console.error('Civic Auth error:', error);
-                  } finally {
-                    setCivicLoading(false);
-                  }
-                }}
-                disabled={civicLoading}
+                onClick={signInWithCivic}
+                disabled={isLoading}
+                className="w-full h-12 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold shadow-lg"
               >
-                {civicLoading ? (
+                {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connecting...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Connecting with Civic...
                   </>
                 ) : (
                   <>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Sign in with Civic
+                    <Shield className="w-5 h-5 mr-2" />
+                    Continue with Civic Auth
                   </>
                 )}
               </Button>
-              
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Secure decentralized authentication
+
+              <p className="text-xs text-muted-foreground mt-3">
+                Secure, decentralized authentication powered by Civic
               </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Why Civic Auth?</h3>
+                <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>No passwords to remember</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Decentralized identity verification</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Enhanced security & privacy</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>One-click authentication</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-6 text-center">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ← Back to Home
+          </Button>
+        </div>
       </div>
     </div>
   );

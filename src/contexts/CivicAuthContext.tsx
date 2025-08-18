@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { CivicAuthProvider as CivicSDKProvider, UserButton, useUser } from '@civic/auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthErrorHandler } from '@/utils/authErrorHandler';
 
@@ -30,6 +31,8 @@ interface EnhancedCivicAuthContextType {
   // Additional methods for role management
   updateUserRole: (role: 'client' | 'provider') => Promise<void>;
   getUserRole: () => 'client' | 'provider' | null;
+  // Civic SDK user data
+  civicSDKUser: any;
 }
 
 const EnhancedCivicAuthContext = createContext<EnhancedCivicAuthContextType | undefined>(undefined);
@@ -44,66 +47,74 @@ interface CivicAuthProviderProps {
 }
 
 // Enhanced Civic Auth Provider Implementation
-const CivicAuthProviderInner: React.FC<{ 
-  children: ReactNode; 
+const CivicAuthProviderInner: React.FC<{
+  children: ReactNode;
   onSignIn?: (user: CivicUser) => void;
   onSignOut?: () => void;
   clientId?: string;
 }> = ({ children, onSignIn, onSignOut, clientId }) => {
   const [civicUser, setCivicUser] = useState<CivicUser | null>(null);
   const [error, setError] = useState<AuthError | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Mock Civic Auth implementation for development
+  // Use the real Civic Auth SDK
+  const { user: civicSDKUser, signIn, signOut: civicSignOut, isLoading } = useUser();
+
+  // Convert Civic SDK user to our CivicUser format
+  useEffect(() => {
+    if (civicSDKUser) {
+      const convertedUser: CivicUser = {
+        id: civicSDKUser.id,
+        email: civicSDKUser.email,
+        name: civicSDKUser.name || civicSDKUser.given_name || 'Civic User',
+        verified: true, // Civic users are verified by default
+        metadata: {
+          given_name: civicSDKUser.given_name,
+          family_name: civicSDKUser.family_name,
+          picture: civicSDKUser.picture,
+          updated_at: civicSDKUser.updated_at,
+        },
+      };
+
+      setCivicUser(convertedUser);
+      onSignIn?.(convertedUser);
+
+      toast({
+        title: "Welcome to Konnect!",
+        description: `Successfully signed in with Civic Auth`,
+      });
+    } else {
+      setCivicUser(null);
+    }
+  }, [civicSDKUser, onSignIn, toast]);
+
   const signInWithCivic = async (): Promise<void> => {
     try {
       setError(null);
-      setIsLoading(true);
-      
-      // Simulate Civic Auth flow
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Create mock Civic user
-      const mockCivicUser: CivicUser = {
-        id: `civic_${Date.now()}`,
-        email: 'civic.user@example.com',
-        name: 'Civic User',
-        verified: true,
-        metadata: {},
-      };
-      
-      setCivicUser(mockCivicUser);
-      onSignIn?.(mockCivicUser);
-      
-      toast({
-        title: "Civic Auth Success",
-        description: `Welcome, ${mockCivicUser.name}!`,
-      });
+      await signIn();
     } catch (err: any) {
       const error = AuthErrorHandler.handleCivicAuthError(err);
       setError(error);
       AuthErrorHandler.logError(error, 'CivicAuth sign in');
-      
+
       toast({
         title: "Sign In Failed",
         description: AuthErrorHandler.displayUserFriendlyMessage(error),
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signOut = async (): Promise<void> => {
     try {
+      await civicSignOut();
       setCivicUser(null);
       setError(null);
       onSignOut?.();
-      
+
       toast({
         title: "Signed Out",
-        description: "You have been signed out of Civic Auth",
+        description: "You have been signed out successfully",
       });
     } catch (err: any) {
       console.error('Civic Auth sign out error:', err);
@@ -156,6 +167,7 @@ const CivicAuthProviderInner: React.FC<{
     clearError,
     updateUserRole,
     getUserRole,
+    civicSDKUser,
   };
 
   return (
@@ -175,18 +187,41 @@ export const CivicAuthProvider: React.FC<CivicAuthProviderProps> = ({
   // Get client ID from environment or props
   const effectiveClientId = clientId || import.meta.env.VITE_CIVIC_AUTH_CLIENT_ID;
 
-  // For now, use mock implementation regardless of client ID
-  // In production, you would conditionally use the real Civic SDK
-  console.log('Civic Auth Provider initialized with mock implementation');
+  if (!effectiveClientId) {
+    console.error('Civic Auth Client ID is required. Please set VITE_CIVIC_AUTH_CLIENT_ID in your .env file');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center p-8 max-w-md">
+          <h2 className="text-xl font-semibold text-destructive mb-2">Configuration Error</h2>
+          <p className="text-muted-foreground">
+            Civic Auth Client ID is missing. Please add your Client ID to the .env file.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <CivicAuthProviderInner 
-      onSignIn={onSignIn} 
-      onSignOut={onSignOut}
+    <CivicSDKProvider
       clientId={effectiveClientId}
+      displayMode={displayMode}
+      onSignIn={(error?: Error) => {
+        if (error) {
+          console.error('Civic Auth sign in error:', error);
+        }
+      }}
+      onSignOut={() => {
+        console.log('User signed out from Civic Auth');
+      }}
     >
-      {children}
-    </CivicAuthProviderInner>
+      <CivicAuthProviderInner
+        onSignIn={onSignIn}
+        onSignOut={onSignOut}
+        clientId={effectiveClientId}
+      >
+        {children}
+      </CivicAuthProviderInner>
+    </CivicSDKProvider>
   );
 };
 

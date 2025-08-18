@@ -250,32 +250,144 @@ export const seedInitialData = async () => {
   if (count > 0) return;
   
   try {
-    // Fetch the seed data from the public directory
+    // Try to fetch the seed data from the public directory
     const response = await fetch('/seed-data.json');
     if (!response.ok) {
-      throw new Error(`Failed to fetch seed data: ${response.statusText}`);
+      console.log('No seed data file found, creating minimal data');
+      // Create minimal seed data if file doesn't exist
+      await createMinimalSeedData(db);
+      return;
     }
-    
+
     const seedData = await response.json();
-    
-    // Add users
+
+    // Add users with error handling
     const userTx = db.transaction('users', 'readwrite');
     for (const user of seedData.users) {
-      await userTx.store.put(user);
+      try {
+        await userTx.store.put(user);
+      } catch (userError) {
+        console.warn('Failed to add user:', user.id, userError);
+      }
     }
     await userTx.done;
-    
-    // Add service providers
+
+    // Add service providers with error handling
     const providerTx = db.transaction('service_providers', 'readwrite');
     for (const provider of seedData.service_providers) {
-      await providerTx.store.put(provider);
+      try {
+        await providerTx.store.put(provider);
+      } catch (providerError) {
+        console.warn('Failed to add provider:', provider.id, providerError);
+      }
     }
     await providerTx.done;
-    
+
     console.log('Successfully seeded initial data');
   } catch (error) {
     console.error('Error seeding initial data:', error);
+    // Create minimal data as fallback
+    try {
+      await createMinimalSeedData(db);
+    } catch (fallbackError) {
+      console.error('Failed to create minimal seed data:', fallbackError);
+    }
   }
+};
+
+// Create minimal seed data as fallback
+const createMinimalSeedData = async (db: IDBPDatabase<MarketplaceDB>) => {
+  console.log('Creating minimal seed data...');
+
+  // Create a few sample service providers
+  const sampleProviders = [
+    {
+      id: 'provider-1',
+      user_id: 'user-1',
+      business_name: 'Quick Fix Services',
+      services_offered: JSON.stringify(['Plumbing', 'Electrical']),
+      price_range: '1000-5000',
+      description: 'Professional home repair services',
+      availability: 1,
+      average_rating: 4.5,
+      total_ratings: 10,
+      years_experience: 5,
+      certifications: null,
+      phone_number: '+254712345678',
+      county: 'Nairobi',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'provider-2',
+      user_id: 'user-2',
+      business_name: 'Clean Home Services',
+      services_offered: JSON.stringify(['House Cleaning']),
+      price_range: '500-2000',
+      description: 'Professional cleaning services',
+      availability: 1,
+      average_rating: 4.8,
+      total_ratings: 15,
+      years_experience: 3,
+      certifications: null,
+      phone_number: '+254723456789',
+      county: 'Nairobi',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ];
+
+  // Add sample users
+  const sampleUsers = [
+    {
+      id: 'user-1',
+      civic_auth_id: null,
+      email: 'provider1@example.com',
+      full_name: 'John Doe',
+      phone_number: '+254712345678',
+      location: 'Nairobi',
+      user_type: 'provider',
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'user-2',
+      civic_auth_id: null,
+      email: 'provider2@example.com',
+      full_name: 'Jane Smith',
+      phone_number: '+254723456789',
+      location: 'Nairobi',
+      user_type: 'provider',
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ];
+
+  // Add users
+  const userTx = db.transaction('users', 'readwrite');
+  for (const user of sampleUsers) {
+    try {
+      await userTx.store.put(user);
+    } catch (error) {
+      console.warn('Failed to add sample user:', user.id);
+    }
+  }
+  await userTx.done;
+
+  // Add providers
+  const providerTx = db.transaction('service_providers', 'readwrite');
+  for (const provider of sampleProviders) {
+    try {
+      await providerTx.store.put(provider);
+    } catch (error) {
+      console.warn('Failed to add sample provider:', provider.id);
+    }
+  }
+  await providerTx.done;
+
+  console.log('Minimal seed data created successfully');
 };
 
 export const updateServiceProvider = async (id: string, data: Partial<ServiceProvider>): Promise<ServiceProvider | null> => {

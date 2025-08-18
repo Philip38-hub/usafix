@@ -9,7 +9,8 @@ import { Phone, MapPin, CheckCircle, MessageCircle } from 'lucide-react';
 interface ServiceProvider {
   id: string;
   user_id: string;
-  business_name: string;
+  business_name?: string;
+  full_name?: string;
   description: string;
   services: string[];
   location: string;
@@ -57,14 +58,14 @@ export const ServiceProviderCard: React.FC<ServiceProviderCardProps> = ({
           <Avatar className="w-12 h-12">
             <AvatarImage src={provider.profile_image_url} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {provider.business_name.charAt(0)}
+              {provider.business_name?.charAt(0) || provider.full_name?.charAt(0) || 'S'}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-foreground truncate">
-                {provider.business_name}
+                {provider.business_name || provider.full_name || 'Service Provider'}
               </h3>
               {provider.is_verified && (
                 <CheckCircle className="w-4 h-4 text-success shrink-0" />

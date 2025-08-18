@@ -2,8 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 import * as localDb from '@/lib/db';
 import { DATABASE_TYPE, SUPABASE_CONFIG } from '@/config';
 
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+// Initialize Supabase client only if we're using Supabase and have valid config
+let supabase: any = null;
+
+try {
+  if (DATABASE_TYPE === 'supabase' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+    supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.log('Using local database (IndexedDB)');
+  }
+} catch (error) {
+  console.warn('Supabase client initialization failed, falling back to local database:', error);
+  supabase = null;
+}
 
 interface ServiceProvider {
   id: string;
@@ -23,28 +35,28 @@ interface ServiceProvider {
   updatedAt: string;
 }
 
-// Helper function to normalize provider data
-const normalizeProvider = (provider: any): ServiceProvider => ({
+// Helper function to normalize provider data to snake_case format expected by components
+const normalizeProvider = (provider: any): any => ({
   id: provider.id,
-  userId: provider.user_id || provider.userId,
-  businessName: provider.business_name || provider.businessName || `Service Provider ${provider.id?.slice(0, 6) || 'Unknown'}`,
-  services: Array.isArray(provider.services) 
-    ? provider.services 
+  user_id: provider.user_id || provider.userId,
+  business_name: provider.business_name || provider.businessName || null,
+  full_name: provider.full_name || provider.fullName || `Service Provider ${provider.id?.slice(0, 6) || 'Unknown'}`,
+  services: Array.isArray(provider.services)
+    ? provider.services
     : (provider.services_offered ? JSON.parse(provider.services_offered) : []),
-  priceRange: provider.price_range || provider.priceRange || '$$',
+  price_range: provider.price_range || provider.priceRange || '$$',
   description: provider.description || 'No description available',
-  availability: Boolean(provider.availability || provider.is_available),
-  averageRating: provider.average_rating || provider.averageRating || 0,
-  totalRatings: provider.total_ratings || provider.totalRatings || 0,
-  yearsExperience: provider.years_experience || provider.yearsExperience || 0,
-  certifications: provider.certifications || null,
-  phoneNumber: provider.phone_number || provider.phoneNumber || '',
+  location: provider.location || provider.county || 'Nairobi',
   county: provider.county || provider.location || 'Nairobi',
-  createdAt: provider.created_at || provider.createdAt || new Date().toISOString(),
-  updatedAt: provider.updated_at || provider.updatedAt || new Date().toISOString(),
+  phone_number: provider.phone_number || provider.phoneNumber || '',
+  whatsapp_number: provider.whatsapp_number || provider.phone_number || provider.phoneNumber || '',
+  is_verified: provider.is_verified ?? provider.isVerified ?? false,
+  rating: provider.average_rating || provider.averageRating || 0,
+  total_jobs: provider.total_ratings || provider.totalRatings || 0,
+  profile_image_url: provider.profile_image_url || provider.profileImageUrl || null,
 });
 
-export const getServiceProviders = async (): Promise<ServiceProvider[]> => {
+export const getServiceProviders = async (): Promise<any[]> => {
   try {
     if (DATABASE_TYPE === 'supabase') {
       const { data, error } = await supabase
@@ -66,7 +78,7 @@ export const getServiceProviders = async (): Promise<ServiceProvider[]> => {
   }
 };
 
-export const getServiceProviderById = async (id: string): Promise<ServiceProvider | null> => {
+export const getServiceProviderById = async (id: string): Promise<any | null> => {
   try {
     if (DATABASE_TYPE === 'supabase') {
       const { data, error } = await supabase

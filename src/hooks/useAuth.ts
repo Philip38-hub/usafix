@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCivicAuth, CivicUser } from '@/contexts/CivicAuthContext';
+import { DATABASE_TYPE } from '@/config';
 
 export interface Profile {
   id: string;
@@ -18,13 +17,11 @@ export interface Profile {
 }
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Civic Auth integration
+  // Civic Auth integration - this is now our primary authentication method
   const {
     civicUser,
     isLoading: civicLoading,
@@ -35,111 +32,83 @@ export const useAuth = () => {
     getUserRole: getCivicUserRole
   } = useCivicAuth();
 
-  // Handle Civic Auth user changes
+  // Handle Civic Auth user changes and create/update profile
   useEffect(() => {
-    if (civicUser && !profile) {
+    if (civicUser) {
       handleCivicAuthUser(civicUser);
+    } else {
+      setProfile(null);
+      setLoading(false);
     }
   }, [civicUser]);
 
+  // Initialize loading state
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          try {
-            // Try to fetch user profile, but don't fail if database is not available
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-
-            setProfile(profileData as Profile);
-          } catch (error) {
-            console.warn('Profile fetch failed, using fallback:', error);
-            // Create a fallback profile if database is not available
-            setProfile(null);
-          }
-        } else {
-          setProfile(null);
-        }
-
-        setLoading(false);
-      }
-    );
-
-    // Get initial session with timeout to prevent infinite loading
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-            setProfile(profileData as Profile);
-          } catch (error) {
-            console.warn('Profile fetch failed:', error);
-            setProfile(null);
-          }
-        }
-      } catch (error) {
-        console.warn('Auth initialization failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Set a timeout to ensure loading doesn't get stuck
-    const timeoutId = setTimeout(() => {
+    if (!civicUser) {
       setLoading(false);
-    }, 3000);
-
-    initAuth().then(() => {
-      clearTimeout(timeoutId);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
+    }
+  }, [civicUser]);
   // Handle Civic Auth user and create/update profile
   const handleCivicAuthUser = async (civicUser: CivicUser) => {
     try {
       setLoading(true);
 
-      // For now, skip database operations and just create a mock profile
-      // This avoids database connection issues during development
-      const mockProfile: Profile = {
+      // Create a local profile for Civic Auth user
+      // Since we're using Civic Auth only and local database, we'll create a local profile
+      const localProfile: Profile = {
         id: civicUser.id,
         user_id: civicUser.id,
         civic_auth_id: civicUser.id,
         full_name: civicUser.name || 'Civic User',
         phone_number: null,
         location: null,
-        user_type: 'client',
-        avatar_url: null,
+        user_type: 'client', // Default, will be updated during role selection
+        avatar_url: civicUser.metadata?.picture || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      setProfile(mockProfile);
-      
-      toast({
-        title: "Civic Auth Success",
-        description: "Welcome! Please select your role to continue.",
-      });
+      // If using Supabase, try to sync with database
+      if (DATABASE_TYPE === 'supabase') {
+        try {
+          // Dynamic import to avoid loading Supabase client if not needed
+          const { supabase } = await import('@/integrations/supabase/client');
+
+          // Try to fetch existing profile
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('civic_auth_id', civicUser.id)
+            .single();
+
+          if (existingProfile) {
+            setProfile(existingProfile as Profile);
+          } else {
+            // Create new profile in Supabase
+            const { data: createdProfile, error } = await supabase
+              .from('profiles')
+              .insert([{
+                civic_auth_id: civicUser.id,
+                full_name: civicUser.name || 'Civic User',
+                phone_number: null,
+                location: null,
+                user_type: 'client',
+                avatar_url: civicUser.metadata?.picture || null,
+              }])
+              .select()
+              .single();
+
+            if (error) throw error;
+            setProfile(createdProfile as Profile);
+          }
+        } catch (dbError) {
+          console.warn('Supabase operation failed, using local profile:', dbError);
+          setProfile(localProfile);
+        }
+      } else {
+        // Using local database only
+        setProfile(localProfile);
+      }
     } catch (error) {
       console.error('Error handling Civic Auth user:', error);
     } finally {
@@ -149,96 +118,54 @@ export const useAuth = () => {
 
 
 
-  const signUp = async (email: string, password: string, userData: {
-    full_name: string;
-    phone_number: string;
-    location: string;
-    user_type: 'client' | 'provider'
-  }) => {
+  // Update user role after Civic Auth
+  const updateUserRole = async (role: 'client' | 'provider') => {
+    if (!civicUser || !profile) {
+      throw new Error('No authenticated user found');
+    }
+
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      // Update role in Civic Auth context
+      await updateCivicUserRole(role);
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: userData.full_name,
-            phone_number: userData.phone_number,
-            location: userData.location,
-            user_type: userData.user_type
-          }
-        }
-      });
+      // Update profile locally first
+      setProfile(prev => prev ? { ...prev, user_type: role } : null);
 
-      if (error) throw error;
+      // If using Supabase, try to sync with database
+      if (DATABASE_TYPE === 'supabase') {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
 
-      // Create profile after successful signup
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: data.user.id,
-            full_name: userData.full_name,
-            phone_number: userData.phone_number,
-            location: userData.location,
-            user_type: userData.user_type
-          });
+          const { error } = await supabase
+            .from('profiles')
+            .update({ user_type: role, updated_at: new Date().toISOString() })
+            .eq('civic_auth_id', civicUser.id);
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
+          if (error) throw error;
+        } catch (dbError) {
+          console.warn('Supabase update failed, but local update succeeded:', dbError);
         }
       }
 
       toast({
-        title: "Account created successfully!",
-        description: "Please check your email to verify your account.",
+        title: "Role Updated",
+        description: `You are now registered as a ${role}`,
       });
-
-      return { data, error: null };
     } catch (error: any) {
       toast({
-        title: "Sign up failed",
+        title: "Role update failed",
         description: error.message,
         variant: "destructive",
       });
-      return { data: null, error };
+      throw error;
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
-
-      return { data, error: null };
-    } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      return { data: null, error };
-    }
-  };
-
+  // Sign out from Civic Auth
   const signOut = async () => {
     try {
-      // Sign out from both Civic Auth and Supabase
-      await Promise.all([
-        civicSignOut(),
-        supabase.auth.signOut()
-      ]);
+      await civicSignOut();
+      setProfile(null);
 
       toast({
         title: "Signed out successfully",
@@ -252,40 +179,6 @@ export const useAuth = () => {
       });
     }
   };
-
-  // Update user role
-  const updateUserRole = async (newRole: 'client' | 'provider') => {
-    if (civicUser) {
-      // Update Civic Auth user role
-      await updateCivicUserRole(newRole);
-    }
-
-    if (!profile) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ user_type: newRole })
-        .eq('id', profile.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setProfile(data as Profile);
-      toast({
-        title: "Role Updated",
-        description: `Your role has been updated to ${newRole}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   // Determine user role from either profile or Civic Auth
   const getUserRole = (): 'client' | 'provider' | null => {
     if (profile?.user_type) {
@@ -305,26 +198,30 @@ export const useAuth = () => {
   const currentRole = getUserRole();
 
   return {
-    user,
-    session,
+    // User data
     profile,
-    loading: loading || civicLoading,
-    signUp,
-    signIn,
-    signOut,
-    // Civic Auth methods
-    signInWithCivic,
     civicUser,
-    civicError,
+    loading: loading || civicLoading,
+
+    // Authentication methods (Civic Auth only)
+    signInWithCivic,
+    signOut,
     updateUserRole,
+
     // Authentication status
-    isAuthenticated: !!user || !!civicUser,
+    isAuthenticated: !!civicUser,
     isProvider: currentRole === 'provider',
     isClient: currentRole === 'client',
-    // Enhanced authentication info
-    authMethod: civicUser ? 'civic' : user ? 'supabase' : null,
-    hasProfile: !!profile,
+
+    // Role management
     userRole: currentRole,
-    needsRoleSelection: needsRoleSelection()
+    needsRoleSelection: needsRoleSelection(),
+
+    // Error handling
+    error: civicError,
+
+    // Additional info
+    hasProfile: !!profile,
+    authMethod: 'civic' as const
   };
 };

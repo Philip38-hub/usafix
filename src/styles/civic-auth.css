@@ -1,0 +1,50 @@
+/* Civic Auth UserButton Styling */
+.civic-user-button {
+  /* Ensure the button integrates well with our design system */
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Style the login button when user is not authenticated */
+.civic-user-button .login-button {
+  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.civic-user-button .login-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Style the user info display when authenticated */
+.civic-user-button .internal-button {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.civic-user-button .internal-button:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .civic-user-button {
+    min-width: 100px !important;
+  }
+  
+  .civic-user-button .login-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+  }
+}

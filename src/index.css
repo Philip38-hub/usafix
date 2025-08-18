@@ -1,3 +1,6 @@
+/* Import Civic Auth styles */
+@import './styles/civic-auth.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

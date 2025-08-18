@@ -5,13 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ServiceProviderCard } from '@/components/ServiceProviderCard';
 import { AuthPage } from '@/components/AuthPage';
-import { DatabaseStatus } from '@/components/DatabaseStatus'; 
+import { DatabaseStatus } from '@/components/DatabaseStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { getServiceProviders } from '@/services/dbService';
 import db from '@/lib/db';
-import { Search, Filter, MapPin, Grid, List, Menu, User, LogOut } from 'lucide-react';
+import { Search, Filter, MapPin, Grid, List, Menu, User, LogOut, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { UserButton } from '@civic/auth/react';
 
 interface ServiceProvider {
   id: string;
@@ -31,7 +32,7 @@ interface ServiceProvider {
 }
 
 const Index = () => {
-  const { user, profile, loading, signOut, isProvider, civicUser, authMethod } = useAuth();
+  const { profile, loading, signOut, isProvider, civicUser, authMethod, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
@@ -40,7 +41,6 @@ const Index = () => {
   const [selectedCounty, setSelectedCounty] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showAuth, setShowAuth] = useState(false);
   const [loadingProviders, setLoadingProviders] = useState(true);
 
   const kenyanCounties = [
@@ -152,9 +152,7 @@ const Index = () => {
     );
   }
 
-  if (showAuth) {
-    return <AuthPage defaultTab="signup" />;
-  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,51 +169,36 @@ const Index = () => {
               </Badge>
             </div>
 
-            <div className="flex items-center gap-3">
-              {user || civicUser ? (
+            <div className="flex items-center gap-4">
+              {/* Civic Auth UserButton */}
+              <UserButton
+                className="civic-user-button"
+                style={{ minWidth: "120px" }}
+              />
+
+              {/* Additional info for authenticated users */}
+              {isAuthenticated && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {profile?.full_name || civicUser?.name || 'User'}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {authMethod === 'civic' && (
-                      <Badge variant="outline" className="text-xs">
-                        Civic
-                      </Badge>
-                    )}
-                    {isProvider && (
+                  <Badge variant="outline" className="text-xs">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Civic Auth
+                  </Badge>
+                  {isProvider && (
+                    <>
                       <Badge variant="secondary" className="text-xs">
                         Provider
                       </Badge>
-                    )}
-                  </div>
-                  {isProvider && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/provider/dashboard')}
-                      className="text-xs"
-                    >
-                      Dashboard
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/provider/dashboard')}
+                        className="text-xs"
+                      >
+                        Dashboard
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={signOut}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
                 </div>
-              ) : (
-                <Button
-                  onClick={() => setShowAuth(true)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  Sign In
-                </Button>
               )}
             </div>
           </div>
