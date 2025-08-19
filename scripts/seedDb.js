@@ -104,7 +104,7 @@ for (let i = 0; i < userCount; i++) {
   
   const user = {
     id: generateId(),
-    civic_auth_id: Math.random() < 0.7 ? `civic_${generateId()}` : null,
+    civic_auth_id: null, // Don't create fake civic_auth_id values to avoid conflicts with real users
     email: generateEmail(name),
     full_name: name,
     phone_number: generateKenyanPhoneNumber(),

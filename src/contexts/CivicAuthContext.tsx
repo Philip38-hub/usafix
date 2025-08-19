@@ -62,6 +62,8 @@ const CivicAuthProviderInner: React.FC<{
 
   // Convert Civic SDK user to our CivicUser format
   useEffect(() => {
+    console.log('🔄 CivicAuthContext useEffect triggered:', { civicSDKUser: civicSDKUser ? { id: civicSDKUser.id, name: civicSDKUser.name } : null, isLoading });
+
     if (civicSDKUser) {
       const convertedUser: CivicUser = {
         id: civicSDKUser.id,
@@ -76,6 +78,7 @@ const CivicAuthProviderInner: React.FC<{
         },
       };
 
+      console.log('✅ Setting civicUser state:', convertedUser);
       setCivicUser(convertedUser);
       onSignIn?.(convertedUser);
 
@@ -86,7 +89,10 @@ const CivicAuthProviderInner: React.FC<{
     } else {
       // Only clear user if we're not in a loading state
       if (!isLoading) {
+        console.log('❌ Clearing civicUser state (no civicSDKUser)');
         setCivicUser(null);
+      } else {
+        console.log('⏳ Still loading, not clearing civicUser state');
       }
     }
   }, [civicSDKUser, onSignIn, toast, isLoading]);

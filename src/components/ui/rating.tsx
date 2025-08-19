@@ -57,7 +57,7 @@ export const Rating: React.FC<RatingProps> = ({
         );
       })}
       <span className="ml-2 text-sm text-muted-foreground">
-        {rating.toFixed(1)}
+        {(rating || 0).toFixed(1)}
       </span>
     </div>
   );

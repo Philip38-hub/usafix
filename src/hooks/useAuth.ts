@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCivicAuth, CivicUser } from '@/contexts/CivicAuthContext';
 import { DATABASE_TYPE } from '@/config';
@@ -36,9 +36,13 @@ export const useAuth = () => {
 
   // Handle Civic Auth user changes and create/update profile
   useEffect(() => {
+    console.log('🔄 useAuth useEffect triggered:', { civicUser: civicUser ? { id: civicUser.id, name: civicUser.name } : null });
+
     if (civicUser) {
+      console.log('📞 Calling handleCivicAuthUser for:', civicUser.id);
       handleCivicAuthUser(civicUser);
     } else {
+      console.log('❌ No civicUser, clearing profile');
       setProfile(null);
       setLoading(false);
     }
@@ -52,96 +56,126 @@ export const useAuth = () => {
   }, [civicUser]);
   // Handle Civic Auth user and create/update profile
   const handleCivicAuthUser = async (civicUser: CivicUser) => {
+    console.log('🚀 handleCivicAuthUser started for:', { id: civicUser.id, name: civicUser.name, email: civicUser.email });
+
     try {
       setLoading(true);
 
       // Check for pending role selection
       const pendingRole = localStorage.getItem('pending_role_selection') as 'client' | 'provider' | null;
+      console.log('📋 Pending role from localStorage:', pendingRole);
+      console.log('🔧 DATABASE_TYPE:', DATABASE_TYPE);
 
-      // Create a local profile for Civic Auth user
-      // Since we're using Civic Auth only and local database, we'll create a local profile
-      const localProfile: Profile = {
-        id: civicUser.id,
-        user_id: civicUser.id,
-        civic_auth_id: civicUser.id,
-        full_name: civicUser.name || 'Civic User',
-        phone_number: null,
-        location: null,
-        user_type: pendingRole || 'client', // Default to client, but track if role was actually selected
-        avatar_url: civicUser.metadata?.picture || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        role_selected: !!pendingRole, // Only true if there was a pending role selection
-      };
-
-      // If using Supabase, try to sync with database
       if (DATABASE_TYPE === 'supabase') {
+        console.log('✅ Using Supabase database path');
         try {
           // Dynamic import to avoid loading Supabase client if not needed
           const { supabase } = await import('@/integrations/supabase/client');
 
-          // Use user_id field to store civic_auth_id since we're not using Supabase Auth
-          // Try to fetch existing profile by user_id (which contains civic_auth_id)
-          const { data: existingProfile } = await supabase
+          // Try to fetch existing profile by civic_auth_id (primary identifier)
+          console.log('🔍 Searching for existing profile with civic_auth_id:', civicUser.id);
+          const { data: existingProfile, error: fetchError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('user_id', civicUser.id)
+            .eq('civic_auth_id', civicUser.id)
             .single();
+
+          // Handle fetch errors (ignore "not found" errors)
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            console.error('❌ Supabase fetch error:', fetchError);
+            throw fetchError;
+          }
+
+          console.log('🔍 Profile search result:', { found: !!existingProfile, error: fetchError?.code });
 
           if (existingProfile) {
             // User exists, convert to our Profile format
+            const profileData = existingProfile as any; // Type assertion to handle missing civic_auth_id in types
             const dbProfile: Profile = {
-              id: existingProfile.id,
-              user_id: existingProfile.user_id, // This contains civic_auth_id
-              civic_auth_id: existingProfile.user_id, // Same as user_id in our case
-              full_name: existingProfile.full_name,
-              phone_number: existingProfile.phone_number,
-              location: existingProfile.location,
-              user_type: existingProfile.user_type,
-              avatar_url: existingProfile.avatar_url,
-              created_at: existingProfile.created_at,
-              updated_at: existingProfile.updated_at,
-              role_selected: true, // Existing users have already selected their role
+              id: profileData.id,
+              user_id: profileData.civic_auth_id, // Use civic_auth_id as user_id
+              civic_auth_id: profileData.civic_auth_id,
+              full_name: profileData.full_name,
+              phone_number: profileData.phone_number,
+              location: profileData.location,
+              user_type: profileData.user_type as 'client' | 'provider',
+              avatar_url: profileData.avatar_url,
+              created_at: profileData.created_at,
+              updated_at: profileData.updated_at,
+              role_selected: profileData.role_selected ?? false, // Default to false for proper role selection flow
             };
             setProfile(dbProfile);
+            console.log('✅ Existing profile loaded:', {
+              civic_auth_id: dbProfile.civic_auth_id,
+              user_type: dbProfile.user_type,
+              role_selected: dbProfile.role_selected
+            });
           } else {
             // Create new profile in Supabase
+            console.log('📝 Creating new profile for:', civicUser.id);
             const { data: createdProfile, error } = await supabase
               .from('profiles')
               .insert([{
-                user_id: civicUser.id, // Store civic_auth_id in user_id field
+                civic_auth_id: civicUser.id, // Primary identifier
+                user_id: civicUser.id, // For compatibility, store same value
                 full_name: civicUser.name || 'Civic User',
                 phone_number: null,
                 location: 'Nairobi',
                 user_type: pendingRole || 'client', // Default to client
                 avatar_url: civicUser.metadata?.picture || null,
+                role_selected: !!pendingRole, // True only if role was pre-selected
               }])
               .select()
               .single();
 
             if (error) {
-              console.error('Supabase insert error:', error);
+              console.error('❌ Supabase insert error:', error);
+              console.error('   Code:', error.code);
+              console.error('   Message:', error.message);
+              console.error('   Details:', error.details);
               throw error;
             }
 
+            console.log('✅ Profile created successfully:', createdProfile);
+            const profileData = createdProfile as any; // Type assertion
             const dbProfile: Profile = {
-              id: createdProfile.id,
-              user_id: createdProfile.user_id,
-              civic_auth_id: createdProfile.user_id, // Same as user_id
-              full_name: createdProfile.full_name,
-              phone_number: createdProfile.phone_number,
-              location: createdProfile.location,
-              user_type: createdProfile.user_type,
-              avatar_url: createdProfile.avatar_url,
-              created_at: createdProfile.created_at,
-              updated_at: createdProfile.updated_at,
-              role_selected: !!pendingRole, // Track if role was explicitly selected
+              id: profileData.id,
+              user_id: profileData.civic_auth_id,
+              civic_auth_id: profileData.civic_auth_id,
+              full_name: profileData.full_name,
+              phone_number: profileData.phone_number,
+              location: profileData.location,
+              user_type: profileData.user_type as 'client' | 'provider',
+              avatar_url: profileData.avatar_url,
+              created_at: profileData.created_at,
+              updated_at: profileData.updated_at,
+              role_selected: profileData.role_selected,
             };
             setProfile(dbProfile);
+            console.log('✅ New profile created and set:', {
+              civic_auth_id: dbProfile.civic_auth_id,
+              user_type: dbProfile.user_type,
+              role_selected: dbProfile.role_selected
+            });
           }
         } catch (dbError) {
-          console.warn('Supabase operation failed, using local profile:', dbError);
-          setProfile(localProfile);
+          console.error('❌ Supabase operation failed:', dbError);
+          // Create a fallback local profile
+          const fallbackProfile: Profile = {
+            id: civicUser.id,
+            user_id: civicUser.id,
+            civic_auth_id: civicUser.id,
+            full_name: civicUser.name || 'Civic User',
+            phone_number: null,
+            location: 'Nairobi',
+            user_type: pendingRole || 'client',
+            avatar_url: civicUser.metadata?.picture || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            role_selected: false,
+          };
+          setProfile(fallbackProfile);
+          console.log('⚠️ Using fallback local profile due to database error');
         }
       } else {
         // Using local database - check if user exists, create if not
@@ -178,6 +212,7 @@ export const useAuth = () => {
               location: 'Nairobi', // Default location
               userType: pendingRole || 'client', // Local DB might require a default, but we'll handle this in the DB layer
               avatarUrl: civicUser.metadata?.picture || null,
+              roleSelected: !!pendingRole, // Only true if there was a pending role selection
             });
 
             const dbProfile: Profile = {
@@ -216,8 +251,15 @@ export const useAuth = () => {
         }
       }
     } catch (error) {
-      console.error('Error handling Civic Auth user:', error);
+      console.error('❌ Error handling Civic Auth user:', error);
+      console.error('   Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        civicUserId: civicUser.id,
+        civicUserName: civicUser.name
+      });
     } finally {
+      console.log('🏁 handleCivicAuthUser completed, setting loading to false');
       setLoading(false);
     }
   };
@@ -237,13 +279,21 @@ export const useAuth = () => {
       // Update role in database
       if (DATABASE_TYPE === 'supabase') {
         try {
+          console.log('📦 Importing Supabase client...');
           const { supabase } = await import('@/integrations/supabase/client');
+          console.log('✅ Supabase client imported successfully');
 
-          // Update role using user_id (which contains civic_auth_id)
+          // Update role using civic_auth_id (primary identifier)
           const { error } = await supabase
             .from('profiles')
-            .update({ user_type: role, updated_at: new Date().toISOString() })
-            .eq('user_id', civicUser.id);
+            .update({
+              user_type: role,
+              role_selected: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq('civic_auth_id', civicUser.id);
+
+          console.log('✅ Role updated in database:', { civic_auth_id: civicUser.id, role });
 
           if (error) {
             console.error('Supabase update error:', error);
@@ -256,7 +306,7 @@ export const useAuth = () => {
         // Update role in local database
         try {
           const { updateUser } = await import('@/lib/db');
-          await updateUser(civicUser.id, { userType: role });
+          await updateUser(civicUser.id, { userType: role, roleSelected: true });
         } catch (dbError) {
           console.warn('Local database update failed, but memory update succeeded:', dbError);
         }
@@ -315,36 +365,42 @@ export const useAuth = () => {
     }
   };
   // Determine user role from profile (database) first, then fallback to Civic Auth
-  const getUserRole = (): 'client' | 'provider' | null => {
+  const getUserRole = useMemo((): 'client' | 'provider' | null => {
     // Primary source: database profile
     if (profile?.user_type) {
-      console.log('getUserRole: Found role in profile:', profile.user_type);
       return profile.user_type;
     }
 
     // Fallback: Civic Auth context (localStorage)
     if (civicUser) {
       const civicRole = getCivicUserRole();
-      console.log('getUserRole: Found role in Civic Auth:', civicRole);
       return civicRole;
     }
 
-    console.log('getUserRole: No role found');
     return null;
-  };
+  }, [profile?.user_type, civicUser, getCivicUserRole]);
 
   // Check if user needs role selection
-  const needsRoleSelection = (): boolean => {
-    const hasUser = !!civicUser;
-    const hasProfile = !!profile;
-    const roleSelected = profile?.role_selected ?? true; // Default to true for existing users without this flag
-    const needsRole = hasUser && hasProfile && !roleSelected;
+  const needsRoleSelection = useMemo((): boolean => {
+    // User must be authenticated and have a profile
+    if (!civicUser || !profile) {
+      return false;
+    }
 
-    console.log('needsRoleSelection:', { hasUser, hasProfile, roleSelected, needsRole, profile });
-    return needsRole;
-  };
+    // If role_selected is explicitly false, user needs role selection
+    if (profile.role_selected === false) {
+      return true;
+    }
 
-  const currentRole = getUserRole();
+    // If role_selected is null/undefined and user_type is default 'client', they likely need role selection
+    if (profile.role_selected == null && profile.user_type === 'client') {
+      return true;
+    }
+
+    return false;
+  }, [civicUser, profile?.role_selected, profile?.user_type]);
+
+  const currentRole = getUserRole;
 
   return {
     // User data
@@ -364,7 +420,7 @@ export const useAuth = () => {
 
     // Role management
     userRole: currentRole,
-    needsRoleSelection: needsRoleSelection(),
+    needsRoleSelection: needsRoleSelection,
 
     // Error handling
     error: civicError,

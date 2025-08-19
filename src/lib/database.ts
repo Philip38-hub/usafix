@@ -42,6 +42,7 @@ function initializeSchema(): void {
       location TEXT NOT NULL,
       user_type TEXT CHECK(user_type IN ('client', 'provider')) NOT NULL,
       avatar_url TEXT,
+      role_selected BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )

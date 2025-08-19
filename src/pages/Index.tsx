@@ -62,9 +62,7 @@ const Index = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Initialize the database and seed data if needed
-        await db.seedInitialData();
-        // Fetch the providers
+        // Fetch the providers (database initialization is handled by the service)
         await fetchProviders();
       } catch (error) {
         console.error('Error initializing app:', error);

@@ -77,35 +77,41 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          civic_auth_id: string
           created_at: string
           full_name: string | null
           id: string
           location: string | null
           phone_number: string | null
+          role_selected: boolean | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           user_type: string
         }
         Insert: {
           avatar_url?: string | null
+          civic_auth_id: string
           created_at?: string
           full_name?: string | null
           id?: string
           location?: string | null
           phone_number?: string | null
+          role_selected?: boolean | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           user_type?: string
         }
         Update: {
           avatar_url?: string | null
+          civic_auth_id?: string
           created_at?: string
           full_name?: string | null
           id?: string
           location?: string | null
           phone_number?: string | null
+          role_selected?: boolean | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           user_type?: string
         }
         Relationships: []

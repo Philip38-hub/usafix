@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CivicAuthProvider } from "@/contexts/CivicAuthContext";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { RoleSelection } from "@/components/RoleSelection";
+
 import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import ProviderDashboard from "./pages/ProviderDashboard";

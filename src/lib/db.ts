@@ -1,5 +1,24 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
+// Define ServiceProvider type for the updateServiceProvider function
+interface ServiceProvider {
+  id: string;
+  user_id: string;
+  business_name: string | null;
+  services_offered: string;
+  price_range: string;
+  description: string;
+  availability: number;
+  average_rating: number;
+  total_ratings: number;
+  years_experience: number;
+  certifications: string | null;
+  phone_number: string;
+  county: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Define the database schema
 interface MarketplaceDB extends DBSchema {
   service_providers: {
@@ -37,6 +56,7 @@ interface MarketplaceDB extends DBSchema {
       location: string;
       user_type: 'client' | 'provider';
       avatar_url: string | null;
+      role_selected: boolean;
       created_at: string;
       updated_at: string;
     };
@@ -258,6 +278,7 @@ export const createUser = async (data: any) => {
     location: data.location || 'Nairobi',
     user_type: data.userType || 'client',
     avatar_url: data.avatarUrl || null,
+    role_selected: data.roleSelected || false,
     created_at: data.createdAt || now,
     updated_at: now,
   };
@@ -292,6 +313,7 @@ export const updateUser = async (civicAuthId: string, updates: any) => {
     ...existingUser,
     ...updates,
     user_type: updates.userType || existingUser.user_type,
+    role_selected: updates.roleSelected !== undefined ? updates.roleSelected : existingUser.role_selected,
     updated_at: new Date().toISOString(),
   };
 
@@ -309,9 +331,49 @@ export const updateUser = async (civicAuthId: string, updates: any) => {
   return toCamelCase(updatedUser);
 };
 
+// Migration function to add role_selected field to existing users
+export const migrateExistingUsers = async () => {
+  const db = await getDB();
+
+  try {
+    // Get all users
+    const allUsers = await db.getAll('users');
+
+    // Update users that don't have role_selected field
+    const tx = db.transaction('users', 'readwrite');
+    let updatedCount = 0;
+
+    for (const user of allUsers) {
+      if (user.role_selected === undefined) {
+        // For existing users with civic_auth_id, set role_selected to false to force role selection
+        // For seed data users (no civic_auth_id), set to true to skip role selection
+        const updatedUser = {
+          ...user,
+          role_selected: user.civic_auth_id ? false : true
+        };
+
+        await tx.store.put(updatedUser);
+        updatedCount++;
+        console.log(`Migrated user: ${user.full_name}, civic_auth_id: ${user.civic_auth_id}, role_selected: ${updatedUser.role_selected}`);
+      }
+    }
+
+    await tx.done;
+
+    if (updatedCount > 0) {
+      console.log(`Migration completed: Updated ${updatedCount} users with role_selected field`);
+    }
+  } catch (error) {
+    console.error('Migration failed:', error);
+  }
+};
+
 export const seedInitialData = async () => {
   const db = await getDB();
-  
+
+  // Run migration first
+  await migrateExistingUsers();
+
   // Check if we already have data
   const count = await db.count('service_providers');
   if (count > 0) return;
@@ -413,8 +475,9 @@ const createMinimalSeedData = async (db: IDBPDatabase<MarketplaceDB>) => {
       full_name: 'John Doe',
       phone_number: '+254712345678',
       location: 'Nairobi',
-      user_type: 'provider',
+      user_type: 'provider' as 'client' | 'provider',
       avatar_url: null,
+      role_selected: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
@@ -425,8 +488,9 @@ const createMinimalSeedData = async (db: IDBPDatabase<MarketplaceDB>) => {
       full_name: 'Jane Smith',
       phone_number: '+254723456789',
       location: 'Nairobi',
-      user_type: 'provider',
+      user_type: 'provider' as 'client' | 'provider',
       avatar_url: null,
+      role_selected: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }

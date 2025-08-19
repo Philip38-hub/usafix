@@ -3,9 +3,9 @@
 // For development, use 'local' for easy testing without Supabase setup
 // For production with cross-browser persistence, use 'supabase'
 
-// Auto-detect based on environment variable, fallback to local for development
+// Auto-detect based on environment variable, fallback to supabase for development
 export const DATABASE_TYPE: 'supabase' | 'local' =
-  (import.meta.env.VITE_DATABASE_TYPE as 'supabase' | 'local') || 'local';
+  (import.meta.env.VITE_DATABASE_TYPE as 'supabase' | 'local') || 'supabase';
 
 // Development mode flag
 export const IS_DEVELOPMENT = import.meta.env.DEV;

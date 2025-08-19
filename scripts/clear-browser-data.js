@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+console.log('🧹 Browser Data Cleanup Instructions');
+console.log('====================================');
+console.log('');
+console.log('To ensure a clean test environment, please:');
+console.log('');
+console.log('1. Open your browser Developer Tools (F12)');
+console.log('2. Go to Application tab');
+console.log('3. Clear all storage:');
+console.log('   - Local Storage: Clear all entries');
+console.log('   - Session Storage: Clear all entries');
+console.log('   - IndexedDB: Delete "marketplace-db" database');
+console.log('   - Cookies: Clear all cookies for localhost');
+console.log('');
+console.log('OR use the "Clear storage" button in Application > Storage');
+console.log('');
+console.log('4. Refresh the page');
+console.log('5. Test with a NEW email address for Civic Auth');
+console.log('');
+console.log('This will ensure:');
+console.log('✅ No cached IndexedDB data');
+console.log('✅ No pending role selections in localStorage');
+console.log('✅ Clean Supabase-only environment');
+console.log('✅ Fresh user experience');
+console.log('');
+console.log('Expected flow:');
+console.log('1. Sign up with Civic Auth');
+console.log('2. Profile created in Supabase with role_selected = false');
+console.log('3. Redirected to role selection page');
+console.log('4. Select role');
+console.log('5. Profile updated with role_selected = true');
+console.log('6. Redirected to appropriate page');
