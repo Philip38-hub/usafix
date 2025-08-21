@@ -1,8 +1,8 @@
-# 🔗 Konnect - Kenya's Premier Service Marketplace
+# 🔗 Usafix - Kenya's Premier Service Marketplace
 
 **Connecting Kenyans with trusted service providers across the country**
 
-Konnect is a modern web application that bridges the gap between service seekers and professional service providers in Kenya. Built with React, TypeScript, and Supabase, it offers a seamless platform for booking home repairs, cleaning services, and maintenance across Kenya.
+A modern web application that bridges the gap between service seekers and professional service providers in Kenya and Africa. Built with React, TypeScript, and Supabase, it offers a seamless platform for booking home repairs, cleaning services, and maintenance across Kenya.
 
 ## 🌟 Features
 
@@ -87,8 +87,8 @@ Konnect is a modern web application that bridges the gap between service seekers
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd konnect
+   git clone https://github.com/Philip38-hub/usafix.git
+   cd usafix
    ```
 
 2. **Install dependencies**
@@ -98,6 +98,10 @@ Konnect is a modern web application that bridges the gap between service seekers
 
 3. **Environment Setup**
    Create a `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   Fill in the necessary environment variables:
    ```env
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -197,6 +201,8 @@ node scripts/check-providers.js
 - Real-time notifications
 - Provider booking management
 - Advanced search and filtering
+- Blockchain intergration
+- Location feature
 
 ## 🤝 Contributing
 
