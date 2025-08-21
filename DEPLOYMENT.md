@@ -37,9 +37,9 @@ This guide will walk you through deploying the Usafix application to Netlify.
 In your Netlify dashboard, go to **Site settings > Environment variables** and add:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_CIVIC_AUTH_CLIENT_ID=your_civic_client_id
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_from_dashboard
+VITE_CIVIC_AUTH_CLIENT_ID=your_civic_client_id_from_console
 VITE_APP_NAME=Usafix
 DATABASE_TYPE=supabase
 ```

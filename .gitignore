@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
-Deployment.md
+.env.local
+.env.backup
+.env.production
+*.env.backup
+NETLIFY-SECRETS-FIX.md
+DEPLOYMENT.md
 

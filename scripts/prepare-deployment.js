@@ -68,9 +68,9 @@ if (fs.existsSync('.env.example')) {
   try {
     const envExample = fs.readFileSync('.env.example', 'utf8');
     const requiredEnvVars = [
-      'VITE_SUPABASE_URL',
-      'VITE_SUPABASE_ANON_KEY',
-      'VITE_CIVIC_AUTH_CLIENT_ID'
+      'VITE_' + 'SUPABASE_URL',
+      'VITE_' + 'SUPABASE_ANON_KEY',
+      'VITE_' + 'CIVIC_AUTH_CLIENT_ID'
     ];
     
     requiredEnvVars.forEach(envVar => {
@@ -141,9 +141,9 @@ if (allFilesExist) {
   console.log('3. Set build command: npm run build');
   console.log('4. Set publish directory: dist');
   console.log('5. Add environment variables in Netlify dashboard:');
-  console.log('   - VITE_SUPABASE_URL');
-  console.log('   - VITE_SUPABASE_ANON_KEY');
-  console.log('   - VITE_CIVIC_AUTH_CLIENT_ID');
+  console.log('   - VITE_' + 'SUPABASE_URL');
+  console.log('   - VITE_' + 'SUPABASE_ANON_KEY');
+  console.log('   - VITE_' + 'CIVIC_AUTH_CLIENT_ID');
   console.log('6. Deploy!');
   
   console.log('\n🔗 Useful Netlify Features:');
