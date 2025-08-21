@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ServiceProviderCard } from '@/components/ServiceProviderCard';
 import { AuthPage } from '@/components/AuthPage';
 import { DatabaseStatus } from '@/components/DatabaseStatus';
@@ -190,6 +191,23 @@ const Index = () => {
                     <Shield className="w-3 h-3 mr-1" />
                     Civic Auth
                   </Badge>
+
+                  {/* Profile button for all authenticated users */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/profile')}
+                    className="text-xs"
+                  >
+                    <User className="w-3 h-3 mr-1" />
+                    Profile
+                    {(!profile?.full_name || profile.full_name === 'Civic User') && (
+                      <Badge variant="secondary" className="ml-1 text-xs">
+                        !
+                      </Badge>
+                    )}
+                  </Button>
+
                   {isProvider && (
                     <>
                       <Badge variant="secondary" className="text-xs">
@@ -266,6 +284,27 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Profile Completion Alert for authenticated clients */}
+      {isAuthenticated && !isProvider && (!profile?.full_name || profile.full_name === 'Civic User') && (
+        <section className="py-4">
+          <div className="container mx-auto px-4">
+            <Alert className="border-blue-200 bg-blue-50">
+              <User className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Complete your profile</strong> to get personalized recommendations and faster bookings.{' '}
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-semibold text-blue-600 hover:text-blue-700"
+                  onClick={() => navigate('/profile')}
+                >
+                  Update your profile now →
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </section>
+      )}
 
       {/* Results Section */}
       <section className="py-8">

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -94,6 +95,23 @@ const ProviderDashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Profile Completion Alert */}
+        {(!profile?.full_name || profile.full_name === 'Civic User') && (
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
+            <Users className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Complete your profile</strong> to get more bookings and build trust with clients.{' '}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-semibold text-orange-600 hover:text-orange-700"
+                onClick={() => navigate('/profile')}
+              >
+                Update your profile now →
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-2">
@@ -209,9 +227,18 @@ const ProviderDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => navigate('/profile')}
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Update Profile
+                  {(!profile?.full_name || profile.full_name === 'Civic User') && (
+                    <Badge variant="secondary" className="ml-auto">
+                      Incomplete
+                    </Badge>
+                  )}
                 </Button>
                 <Button className="w-full justify-start" variant="outline">
                   <Calendar className="h-4 w-4 mr-2" />

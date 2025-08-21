@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import { AuthPage } from "./components/AuthPage";
+import { ProfileEdit } from "./components/ProfileEdit";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +39,19 @@ const AppRouter = () => {
       
       {/* Role selection for Civic Auth users */}
       <Route path="/select-role" element={<RoleSelection />} />
-      
+
+      {/* Profile editing - requires authentication */}
+      <Route
+        path="/profile"
+        element={
+          isAuthenticated ? (
+            <ProfileEdit />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+
       {/* Provider-only routes */}
       <Route 
         path="/provider/dashboard" 

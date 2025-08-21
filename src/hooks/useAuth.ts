@@ -187,17 +187,18 @@ export const useAuth = () => {
 
           if (existingUser) {
             // User exists, use their stored profile
+            const user = existingUser as any; // Type assertion for database result
             const dbProfile: Profile = {
-              id: existingUser.id,
-              user_id: existingUser.id,
-              civic_auth_id: existingUser.civicAuthId,
-              full_name: existingUser.fullName,
-              phone_number: existingUser.phoneNumber,
-              location: existingUser.location,
-              user_type: existingUser.userType,
-              avatar_url: existingUser.avatarUrl,
-              created_at: existingUser.createdAt,
-              updated_at: existingUser.updatedAt,
+              id: user.id,
+              user_id: user.id,
+              civic_auth_id: user.civicAuthId,
+              full_name: user.fullName,
+              phone_number: user.phoneNumber,
+              location: user.location,
+              user_type: user.userType,
+              avatar_url: user.avatarUrl,
+              created_at: user.createdAt,
+              updated_at: user.updatedAt,
               role_selected: true, // Existing users have already selected their role
             };
             setProfile(dbProfile);
@@ -215,24 +216,39 @@ export const useAuth = () => {
               roleSelected: !!pendingRole, // Only true if there was a pending role selection
             });
 
+            const user = newUser as any; // Type assertion for database result
             const dbProfile: Profile = {
-              id: newUser.id,
-              user_id: newUser.id,
-              civic_auth_id: newUser.civicAuthId,
-              full_name: newUser.fullName,
-              phone_number: newUser.phoneNumber,
-              location: newUser.location,
-              user_type: newUser.userType,
-              avatar_url: newUser.avatarUrl,
-              created_at: newUser.createdAt,
-              updated_at: newUser.updatedAt,
+              id: user.id,
+              user_id: user.id,
+              civic_auth_id: user.civicAuthId,
+              full_name: user.fullName,
+              phone_number: user.phoneNumber,
+              location: user.location,
+              user_type: user.userType,
+              avatar_url: user.avatarUrl,
+              created_at: user.createdAt,
+              updated_at: user.updatedAt,
               role_selected: !!pendingRole, // Track if role was explicitly selected
             };
             setProfile(dbProfile);
           }
         } catch (dbError) {
-          console.warn('Local database operation failed, using memory profile:', dbError);
-          setProfile(localProfile);
+          console.warn('Local database operation failed, using fallback profile:', dbError);
+          // Create a fallback local profile
+          const fallbackProfile: Profile = {
+            id: civicUser.id,
+            user_id: civicUser.id,
+            civic_auth_id: civicUser.id,
+            full_name: civicUser.name || 'Civic User',
+            phone_number: null,
+            location: 'Nairobi',
+            user_type: pendingRole || 'client',
+            avatar_url: civicUser.metadata?.picture || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            role_selected: false,
+          };
+          setProfile(fallbackProfile);
         }
       }
 
@@ -400,6 +416,72 @@ export const useAuth = () => {
     return false;
   }, [civicUser, profile?.role_selected, profile?.user_type]);
 
+  // Profile update function
+  const updateProfile = useCallback(async (updates: {
+    full_name?: string | null;
+    phone_number?: string | null;
+    location?: string | null;
+    avatar_url?: string | null;
+  }) => {
+    if (!civicUser) {
+      throw new Error('User not authenticated');
+    }
+
+    console.log('🔄 Updating profile:', updates);
+
+    // Update profile in database
+    if (DATABASE_TYPE === 'supabase') {
+      try {
+        console.log('📦 Importing Supabase client...');
+        const { supabase } = await import('@/integrations/supabase/client');
+        console.log('✅ Supabase client imported successfully');
+
+        // Update profile using civic_auth_id (primary identifier)
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .eq('civic_auth_id', civicUser.id);
+
+        console.log('✅ Profile updated in database:', { civic_auth_id: civicUser.id, updates });
+
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw error;
+        }
+      } catch (dbError) {
+        console.warn('Supabase update failed:', dbError);
+        throw dbError;
+      }
+    } else {
+      // Update profile in local database
+      try {
+        const { updateUser } = await import('@/lib/db');
+        await updateUser(civicUser.id, {
+          fullName: updates.full_name,
+          phoneNumber: updates.phone_number,
+          location: updates.location,
+          avatarUrl: updates.avatar_url
+        });
+      } catch (dbError) {
+        console.warn('Local database update failed:', dbError);
+        throw dbError;
+      }
+    }
+
+    // Update the profile state to reflect the changes
+    const updatedProfile = profile ? {
+      ...profile,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    } : null;
+
+    setProfile(updatedProfile);
+    console.log('✅ Profile state updated locally');
+  }, [civicUser, profile]);
+
   const currentRole = getUserRole;
 
   return {
@@ -412,6 +494,7 @@ export const useAuth = () => {
     signInWithCivic,
     signOut,
     updateUserRole,
+    updateProfile,
 
     // Authentication status
     isAuthenticated: !!civicUser,

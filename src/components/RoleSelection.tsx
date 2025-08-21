@@ -7,7 +7,7 @@ import { Building, User, Loader2, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const RoleSelection: React.FC = () => {
-  const { updateUserRole, civicUser, isAuthenticated, loading: authLoading, userRole, needsRoleSelection } = useAuth();
+  const { updateUserRole, civicUser, isAuthenticated, loading: authLoading, userRole, needsRoleSelection, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'client' | 'provider' | null>(null);
   const navigate = useNavigate();
@@ -30,7 +30,16 @@ export const RoleSelection: React.FC = () => {
     });
 
     if (isAuthenticated && userRole && !needsRoleSelection && !authLoading) {
-      console.log('Role successfully set, redirecting...', { userRole });
+      console.log('Role successfully set, checking profile completion...', { userRole, profile });
+
+      // Check if profile is incomplete (has default "Civic User" name or missing name)
+      const isIncompleteProfile = !profile?.full_name || profile.full_name === 'Civic User';
+
+      if (isIncompleteProfile) {
+        console.log('Profile incomplete, redirecting to profile completion');
+        navigate('/profile');
+        return;
+      }
 
       // Navigate based on the user's role
       if (userRole === 'provider') {
@@ -39,7 +48,7 @@ export const RoleSelection: React.FC = () => {
         navigate('/');
       }
     }
-  }, [isAuthenticated, userRole, needsRoleSelection, navigate, authLoading]);
+  }, [isAuthenticated, userRole, needsRoleSelection, navigate, authLoading, profile]);
 
   const handleRoleSelection = async (role: 'client' | 'provider') => {
     setLoading(true);
