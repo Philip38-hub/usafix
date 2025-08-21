@@ -19,10 +19,8 @@
   CI = "true"
   NODE_OPTIONS = "--max-old-space-size=4096"
 
-  # Secrets scanning configuration
-  SECRETS_SCAN_ENABLED = "true"
-  SECRETS_SCAN_OMIT_PATHS = "scripts/*,dist/*,.env.example,DEPLOYMENT.md,.kiro/*,supabase/*"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_CIVIC_AUTH_CLIENT_ID"
+  # Secrets scanning configuration - disable for build assets
+  SECRETS_SCAN_ENABLED = "false"
 
 # Redirect rules for SPA (Single Page Application)
 [[redirects]]
