@@ -174,9 +174,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Konnect
-              </h1>
+              <img src="/logo.png" alt="usafix Logo" className="h-32 w-auto" />
               <Badge variant="secondary" className="text-xs">
                 Kenya's Marketplace
               </Badge>

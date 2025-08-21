@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "init-db": "node scripts/initDb.js",
     "seed-db": "node scripts/seedDb.js",
-    "test-db": "node scripts/testDb.js"
+    "test-db": "node scripts/testDb.js",
+    "deploy:prepare": "node scripts/prepare-deployment.js",
+    "deploy:status": "node scripts/deployment-status.js",
+    "deploy:build": "npm run build && npm run deploy:status"
   },
   "dependencies": {
     "@civic/auth": "^0.9.5",
