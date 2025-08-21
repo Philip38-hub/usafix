@@ -50,16 +50,25 @@ export const getServiceProviders = async (): Promise<any[]> => {
 
 export const getServiceProviderById = async (id: string): Promise<any | null> => {
   try {
+    console.log('🔍 dbService: Searching for provider with ID:', id);
     const { data, error } = await supabase
       .from('service_providers')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error) throw error;
-    return data ? normalizeProvider(data) : null;
+
+    console.log('🔍 dbService: Query result:', { data: data ? 'found' : 'null', error });
+
+    if (error) {
+      console.error('❌ dbService: Supabase error:', error);
+      throw error;
+    }
+
+    const normalized = data ? normalizeProvider(data) : null;
+    console.log('✅ dbService: Returning normalized provider:', normalized ? normalized.business_name : 'null');
+    return normalized;
   } catch (error) {
-    console.error(`Error fetching service provider ${id}:`, error);
+    console.error(`❌ dbService: Error fetching service provider ${id}:`, error);
     throw error;
   }
 };

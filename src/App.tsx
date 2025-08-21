@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CivicAuthProvider } from "@/contexts/CivicAuthContext";
+import { BookingProvider } from "@/contexts/BookingContext";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { RoleSelection } from "@/components/RoleSelection";
 
@@ -12,6 +13,9 @@ import Index from "./pages/Index";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import { AuthPage } from "./components/AuthPage";
 import { ProfileEdit } from "./components/ProfileEdit";
+import BookingPage from "./pages/BookingPage";
+import BookingConfirmation from "./pages/BookingConfirmation";
+import TestBooking from "./pages/TestBooking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +40,7 @@ const AppRouter = () => {
       {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/test-booking" element={<TestBooking />} />
       
       {/* Role selection for Civic Auth users */}
       <Route path="/select-role" element={<RoleSelection />} />
@@ -46,6 +51,29 @@ const AppRouter = () => {
         element={
           isAuthenticated ? (
             <ProfileEdit />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+
+      {/* Booking routes - require authentication */}
+      <Route
+        path="/booking/:providerId"
+        element={
+          isAuthenticated ? (
+            <BookingPage />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/booking/confirmation/:bookingId"
+        element={
+          isAuthenticated ? (
+            <BookingConfirmation />
           ) : (
             <Navigate to="/auth" replace />
           )
@@ -89,13 +117,15 @@ const AppRouter = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <CivicAuthProvider displayMode="iframe">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </TooltipProvider>
+      <BookingProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRouter />
+          </BrowserRouter>
+        </TooltipProvider>
+      </BookingProvider>
     </CivicAuthProvider>
   </QueryClientProvider>
 );

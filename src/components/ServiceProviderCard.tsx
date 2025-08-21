@@ -109,8 +109,8 @@ export const ServiceProviderCard: React.FC<ServiceProviderCardProps> = ({
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button 
-          onClick={() => onBook(provider.user_id)}
+        <Button
+          onClick={() => onBook(provider.id)}
           className="flex-1 bg-primary hover:bg-primary/90"
           size="sm"
         >

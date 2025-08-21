@@ -127,6 +127,9 @@ const Index = () => {
   };
 
   const handleBook = (providerId: string) => {
+    console.log('📋 Index: handleBook called with providerId:', providerId);
+    console.log('📋 Index: providerId type:', typeof providerId);
+
     if (!isAuthenticated) {
       navigate('/auth');
       return;
@@ -136,8 +139,10 @@ const Index = () => {
       title: "Booking initiated",
       description: "Redirecting to booking page...",
     });
-    // Navigate to booking page (to be implemented)
-    console.log('Booking provider:', providerId);
+
+    // Navigate to booking page
+    console.log('📋 Index: Navigating to:', `/booking/${providerId}`);
+    navigate(`/booking/${providerId}`);
   };
 
   const handleCall = (phoneNumber: string) => {
