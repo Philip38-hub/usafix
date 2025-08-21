@@ -15,6 +15,10 @@
   # NPM version
   NPM_VERSION = "9"
 
+  # Build optimization
+  CI = "true"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
   # Secrets scanning configuration
   SECRETS_SCAN_ENABLED = "true"
   SECRETS_SCAN_OMIT_PATHS = "scripts/*,dist/*,.env.example,DEPLOYMENT.md,.kiro/*,supabase/*"

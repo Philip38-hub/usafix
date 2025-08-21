@@ -29,4 +29,5 @@ dist-ssr
 *.env.backup
 NETLIFY-SECRETS-FIX.md
 DEPLOYMENT.md
+BUILD-FIXES.md
 
